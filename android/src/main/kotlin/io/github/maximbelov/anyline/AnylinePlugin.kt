@@ -224,7 +224,7 @@ class AnylinePlugin : Plugin() {
 
     companion object {
         /** The version reported to the SDK as the wrapper's. package.json carries the same. */
-        const val VERSION = "0.3.0"
+        const val VERSION = "0.3.1"
 
         /**
          * The folder of the APK's assets the SDK reads a relative asset path from: Capacitor packages the web assets
