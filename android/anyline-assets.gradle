@@ -8,7 +8,7 @@
 //
 // and applies this file from android/app/build.gradle:
 //
-//     apply from: project(':maximbelov-capacitor-anyline').file('anyline-assets.gradle')
+//     apply from: project(':capacitor-anyline').file('anyline-assets.gradle')
 //
 // Every other module is then left out of the APK through androidResources.ignoreAssetsPatterns. Unset or empty, every
 // module is kept. A name that is not a module fails the build, so a typo cannot strip the module the app needs.
@@ -72,7 +72,7 @@ if (project.plugins.hasPlugin('com.android.application')) {
         def apps = rootProject.allprojects.findAll { it.plugins.hasPlugin('com.android.application') }
         if (!apps.isEmpty() && !apps.any { it.ext.has('anylineAssetsApplied') }) {
             throw new GradleException("anylineRetainAssetsPattern is set to '$retain', but no app module applies " +
-                "@maximbelov/capacitor-anyline's anyline-assets.gradle, so every Anyline module would be packaged. Add to " +
+                "capacitor-anyline's anyline-assets.gradle, so every Anyline module would be packaged. Add to " +
                 "android/app/build.gradle: apply from: project(':${project.name}').file('anyline-assets.gradle')")
         }
     }

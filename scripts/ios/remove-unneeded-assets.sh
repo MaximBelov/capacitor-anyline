@@ -3,7 +3,7 @@
 # Anyline.framework, following Anyline's documented approach. Run it from a Run Script build phase placed after the
 # app's frameworks are embedded:
 #
-#   "${SRCROOT}/../../node_modules/@maximbelov/capacitor-anyline/scripts/ios/remove-unneeded-assets.sh"
+#   "${SRCROOT}/../../node_modules/capacitor-anyline/scripts/ios/remove-unneeded-assets.sh"
 #
 # The modules to keep are the space-separated build setting ANYLINE_RETAIN_ASSETS_PATTERN, for example
 # `module_barcode`. Unset or empty, nothing is removed.

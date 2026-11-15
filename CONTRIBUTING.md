@@ -43,8 +43,10 @@ This template is integrated with ESLint, Prettier, and SwiftLint. Using these to
 
 ## Publishing
 
-The package is published to GitHub Packages as `@maximbelov/capacitor-anyline` by the `publish` job of
-`.github/workflows/ci.yaml`, on a push to `main` whose `package.json` version is not published yet. So a release is a
-version bump merged to `main`; there is nothing to run by hand.
+The package is published to npm as `capacitor-anyline` by the `publish` job of `.github/workflows/ci.yaml`, on a push
+to `main` whose `package.json` version is not published yet. It signs in with npm's trusted publishing (OIDC): the
+package's Settings > Trusted Publisher on npmjs.com names this repository and the workflow file `ci.yaml`, with no
+environment, so there is no npm token to keep. A release is a version bump merged to `main`; there is nothing to run by
+hand.
 
 > **Note**: The [`files`](https://docs.npmjs.com/cli/v7/configuring-npm/package-json#files) array in `package.json` specifies which files get published. If you rename files/directories or add files elsewhere, you may need to update it.

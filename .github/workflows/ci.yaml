@@ -2,11 +2,12 @@ name: CI
 # One workflow for what a change goes through, parameterised by what triggered it (see `plan`):
 #
 #   a pull request  runs the tests its change needs, and ends in `ci`, the one job a ruleset on main can require;
-#   a push to main  does the same for everything, then publishes the version in package.json to GitHub Packages;
+#   a push to main  does the same for everything, then publishes the version in package.json to npm as `latest`;
 #   a run by hand   (workflow_dispatch) tests everything and never publishes.
 #
-# The package is published to GitHub Packages with the workflow's own GITHUB_TOKEN; there is no token to keep. A push that
-# keeps the version publishes nothing, so a release is a version bump merged to main.
+# npm's trusted publishing is tied to this file name: the package's Settings > Trusted Publisher on npmjs.com names this
+# repository and this file (ci.yaml), with no environment. There is no npm token to expire. A push that keeps the version
+# publishes nothing, so a release is a version bump merged to main.
 on:
   pull_request:
   push:
@@ -34,7 +35,8 @@ jobs:
   # Everything that depends on what triggered the run is decided here, once:
   #   ios, android  which of the longer tests are needed: all of them for a push, and for a pull request the ones whose code,
   #                 tests or shared files (the TypeScript, the manifest, the workflow) it changes
-  #   publish       whether the run ends in a publish: a push to main, and nothing else
+  #   publish       whether the run ends in a publish: a push to main, and nothing else. Trusted publishing is tied to this file's name and
+  #                 not to a branch, so a run by hand on any branch would publish the version it carries if this said yes
   plan:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -109,28 +111,26 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
-      packages: write
+      id-token: write # npm's trusted publishing signs in with this
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: actions/setup-node@v7.1.0
         with:
+          # npm 11.5 or newer is needed for trusted publishing
           node-version: 24
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@maximbelov'
-          # a publishing job does not restore a dependency cache
+          registry-url: 'https://registry.npmjs.org'
+          # a publishing job does not restore a dependency cache (setup-node's advice for trusted publishing)
           package-manager-cache: false
       - run: npm ci
       - run: npm run build
       - name: The README is the one docgen writes from the source
         run: git diff --exit-code -- README.md
       - name: Publish a version that is new
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           name=$(node -p "require('./package.json').name")
           version=$(node -p "require('./package.json').version")
-          if npm view "$name@$version" version --registry https://npm.pkg.github.com >/dev/null 2>&1; then
+          if npm view "$name@$version" version >/dev/null 2>&1; then
             echo "$name@$version is already published: nothing to do"
             exit 0
           fi
-          npm publish
+          npm publish --provenance --access public

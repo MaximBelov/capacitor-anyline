@@ -85,8 +85,9 @@ test('the native names are the ones the Capacitor CLI derives from the package n
   // fixName and getGradlePackageName of @capacitor/cli: an app's CapApp-SPM, Podfile and capacitor.settings.gradle use
   // these names, so a package, product or pod under any other name is not found by `cap sync`.
   const { name, files, publishConfig } = JSON.parse(read('package.json'));
-  assert.equal(name, '@maximbelov/capacitor-anyline');
-  assert.equal(publishConfig.registry, 'https://npm.pkg.github.com');
+  assert.equal(name, 'capacitor-anyline');
+  // published to the public npm registry: no publishConfig pointing anywhere else
+  assert.equal(publishConfig, undefined);
   const fixName = (id) => {
     const n = id
       .replace(/\//g, '_')
@@ -97,7 +98,8 @@ test('the native names are the ones the Capacitor CLI derives from the package n
   };
   const spm = fixName(name);
   const gradle = name.replace('@', '').replace('/', '-');
-  assert.equal(spm, 'MaximbelovCapacitorAnyline');
+  assert.equal(spm, 'CapacitorAnyline');
+  assert.equal(gradle, 'capacitor-anyline');
   const packageSwift = read('Package.swift');
   assert.match(packageSwift, new RegExp(`^let package = Package\\(\\n    name: "${spm}",`, 'm'));
   assert.match(packageSwift, new RegExp(`\\.library\\(\\n\\s+name: "${spm}",`));
@@ -106,7 +108,7 @@ test('the native names are the ones the Capacitor CLI derives from the package n
   assert.match(read('package.json'), new RegExp(`-scheme ${spm} `));
   for (const path of ['README.md', 'android/anyline-assets.gradle']) {
     assert.ok(read(path).includes(`project(':${gradle}')`), `${path} does not name the Gradle project :${gradle}`);
-    assert.doesNotMatch(read(path), /project\(':capacitor-anyline'\)/);
+    assert.doesNotMatch(read(path), /project\(':maximbelov-capacitor-anyline'\)/);
   }
   for (const path of ['README.md', 'scripts/ios/remove-unneeded-assets.sh']) {
     assert.ok(read(path).includes(`node_modules/${name}/scripts/ios/remove-unneeded-assets.sh`), path);
