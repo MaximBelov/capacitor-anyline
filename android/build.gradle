@@ -1,0 +1,106 @@
+ext {
+    junitVersion = project.hasProperty('junitVersion') ? rootProject.ext.junitVersion : '4.13.2'
+    androidxAppCompatVersion = project.hasProperty('androidxAppCompatVersion') ? rootProject.ext.androidxAppCompatVersion : '1.7.1'
+    // The Anyline SDK this plugin ships. An app can pin another 56.x as `anylineSdkVersion` in variables.gradle.
+    anylineSdkVersion = project.hasProperty('anylineSdkVersion') ? rootProject.ext.anylineSdkVersion : '56.6.0'
+}
+
+buildscript {
+    ext.kotlin_version = project.hasProperty("kotlin_version") ? rootProject.ext.kotlin_version : '2.4.21'
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:9.5.1'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+// Defines anylineIgnoreAssetsPatterns(), and in an app module drops the Anyline modules the app does not keep. Here,
+// in the plugin's own library module, it only defines the function: see the file for why the app applies it.
+apply from: 'anyline-assets.gradle'
+
+android {
+    namespace = "io.github.maximbelov.anyline"
+    compileSdk = project.hasProperty('compileSdkVersion') ? rootProject.ext.compileSdkVersion : 36
+    defaultConfig {
+        minSdkVersion project.hasProperty('minSdkVersion') ? rootProject.ext.minSdkVersion : 26
+        targetSdkVersion project.hasProperty('targetSdkVersion') ? rootProject.ext.targetSdkVersion : 36
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    lintOptions {
+        abortOnError = false
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
+    }
+}
+
+kotlin {
+    jvmToolchain(21)
+}
+
+repositories {
+    google()
+    mavenCentral()
+    // Where Anyline publishes the SDK.
+    maven { url 'https://mobile-sdk-android.anyline.io/release/' }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation project(':capacitor-android')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    // Shipped: the plugin replaces the wrapper that used to bring the SDK, so this is the app's one copy.
+    implementation "io.anyline:anylinesdk:$anylineSdkVersion"
+    testImplementation "junit:junit:$junitVersion"
+    // Android's own org.json is a stub on the JVM; the tests read real JSON.
+    testImplementation 'org.json:json:20260814'
+}
+
+// The asset pattern is plain Groovy, so it is checked here, on every `gradlew build`, rather than in a phone build.
+tasks.register('testAnylineAssetsPattern') {
+    group = 'verification'
+    description = 'Checks the ignore-assets patterns computed from anylineRetainAssetsPattern.'
+    doLast {
+        def check = { String retain, List<String> expected ->
+            def actual = anylineIgnoreAssetsPatterns(retain)
+            if (actual != expected) {
+                throw new GradleException("anylineIgnoreAssetsPatterns(${retain == null ? 'null' : "'$retain'"}): expected $expected, got $actual")
+            }
+        }
+        check(null, [])
+        check('', [])
+        check('   ', [])
+        check('module_barcode', ['module_anyline_ocr', 'module_document', 'module_energy', 'module_id', 'module_license_plate', 'module_tire'])
+        check(' Module_Barcode : module_id ', ['module_anyline_ocr', 'module_document', 'module_energy', 'module_license_plate', 'module_tire'])
+        check('module_anyline_ocr:module_barcode:module_document:module_energy:module_id:module_license_plate:module_tire', [])
+        check('module_barcode::', ['module_anyline_ocr', 'module_document', 'module_energy', 'module_id', 'module_license_plate', 'module_tire'])
+        def unknown = null
+        try {
+            anylineIgnoreAssetsPatterns('module_barcod')
+        } catch (GradleException e) {
+            unknown = e.message
+        }
+        if (unknown == null || !unknown.contains('module_barcod')) {
+            throw new GradleException("an unknown module name must fail the build and name the module, got: $unknown")
+        }
+        // What the app side writes to: the same DSL collection exists on a library's android block.
+        if (!(android.androidResources.ignoreAssetsPatterns instanceof Collection)) {
+            throw new GradleException('android.androidResources.ignoreAssetsPatterns is not a collection on this AGP')
+        }
+        println 'anylineIgnoreAssetsPatterns: all cases pass'
+    }
+}
+tasks.named('check') { dependsOn 'testAnylineAssetsPattern' }

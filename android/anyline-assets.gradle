@@ -1,0 +1,79 @@
+// Keeps only the Anyline scanner modules an app uses.
+//
+// The Anyline SDK ships the assets of every scanner module (barcode, meter, document, ID, licence plate, tyre, ...) in
+// the AAR, under assets/anyline/<module>/, and most apps use one or two. An app names the modules it keeps in
+// variables.gradle, colon-separated:
+//
+//     ext { anylineRetainAssetsPattern = 'module_barcode' }
+//
+// and applies this file from android/app/build.gradle:
+//
+//     apply from: project(':capacitor-anyline').file('anyline-assets.gradle')
+//
+// Every other module is then left out of the APK through androidResources.ignoreAssetsPatterns. Unset or empty, every
+// module is kept. A name that is not a module fails the build, so a typo cannot strip the module the app needs.
+//
+// Why the app applies it: the assets come from the SDK's AAR, and only the module that packages the APK (the app) can
+// filter them. The same setting in this plugin's own library module would filter only the plugin's own assets, of which
+// it has none. (io-anyline-cordova could do it from its own Gradle file because Cordova applies a plugin's Gradle file
+// to the app module.) The plugin's module checks that it was applied, see the end of this file.
+
+ext.anylineModules = [
+    'module_anyline_ocr',
+    'module_barcode',
+    'module_document',
+    'module_energy',
+    'module_id',
+    'module_license_plate',
+    'module_tire',
+]
+
+// The modules to leave out, for a colon-separated list of modules to keep. Empty when nothing is to be left out.
+ext.anylineIgnoreAssetsPatterns = { String retain ->
+    def keep = (retain ?: '').split(':').collect { it.trim().toLowerCase() }.findAll { !it.isEmpty() }
+    if (keep.isEmpty()) {
+        return []
+    }
+    def unknown = keep.findAll { !anylineModules.contains(it) }
+    if (!unknown.isEmpty()) {
+        throw new GradleException("anylineRetainAssetsPattern names ${unknown.join(', ')}, which is not an Anyline module. " +
+            "The modules are: ${anylineModules.join(', ')}.")
+    }
+    return anylineModules.findAll { !keep.contains(it) }
+}
+
+// AAPT's own default, which a set pattern list would otherwise replace: version-control files, dot files and the like.
+ext.anylineAaptDefaultIgnoreAssets = ['!.svn', '!.git', '!.ds_store', '!*.scc', '.*', '<dir>_*', '!CVS', '!thumbs.db', '!picasa.ini', '!*~']
+
+def anylineRetainSetting = {
+    def root = project.rootProject
+    root.ext.has('anylineRetainAssetsPattern') ? root.ext.anylineRetainAssetsPattern?.toString() : null
+}
+
+if (project.plugins.hasPlugin('com.android.application')) {
+    def ignored = anylineIgnoreAssetsPatterns(anylineRetainSetting())
+    if (!ignored.isEmpty()) {
+        def patterns = android.androidResources.ignoreAssetsPatterns
+        if (patterns.isEmpty()) {
+            patterns.addAll(anylineAaptDefaultIgnoreAssets)
+        }
+        patterns.addAll(ignored.collect { "<dir>$it".toString() })
+        logger.lifecycle("Anyline: leaving out the asset modules ${ignored.join(', ')}")
+    }
+    project.ext.anylineAssetsApplied = true
+} else if (project.plugins.hasPlugin('com.android.library')) {
+    // In the plugin's own module: fail the build when an app asks for modules to be left out and no app module applied
+    // this file, which would otherwise ship every module without a word.
+    gradle.projectsEvaluated {
+        def retain = anylineRetainSetting()
+        if (anylineIgnoreAssetsPatterns(retain).isEmpty()) {
+            return
+        }
+        def apps = rootProject.allprojects.findAll { it.plugins.hasPlugin('com.android.application') }
+        if (!apps.isEmpty() && !apps.any { it.ext.has('anylineAssetsApplied') }) {
+            throw new GradleException("anylineRetainAssetsPattern is set to '$retain', but no app module applies " +
+                "capacitor-anyline's anyline-assets.gradle, so every Anyline module would be packaged. Add to " +
+                "android/app/build.gradle: apply from: project(':${project.name}').file('anyline-assets.gradle')")
+        }
+    }
+}

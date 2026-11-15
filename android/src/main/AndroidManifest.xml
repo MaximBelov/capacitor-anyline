@@ -1,0 +1,7 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- The scanner reads the camera, and vibrates on a result when the scan view config asks it to. The SDK's own
+         manifest declares its scan activity, network access and initialisation provider. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+</manifest>

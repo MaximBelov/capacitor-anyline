@@ -1,0 +1,27 @@
+name: iOS tests
+# The Swift of ios/. The Anyline SDK ships no macOS slice and no arm64 simulator slice, so the plugin layer cannot run on
+# a simulator of an arm64 runner: the core (the result mapping, the waiting calls) is tested with `swift test` on the Mac
+# itself, and the package is built for a generic iOS device. The build-phase script is tested by `npm test`.
+# Called by ci.yaml when something it covers changes, and for every push to main.
+on:
+  workflow_call:
+jobs:
+  core:
+    runs-on: macos-26
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - run: npm run test:ios
+  # The Swift of ios/Sources against capacitor-swift-pm and the Anyline SDK, built for a generic iOS device.
+  device:
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 24
+      - run: npm run verify:ios
+      - name: Stop what the build left running
+        if: always()
+        run: pkill -f '[x]codebuild' || true
