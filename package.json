@@ -57,7 +57,10 @@
     "test:parity": "node --test test/unit/platform-parity.test.mjs",
     "test:scripts": "node --test test/unit/remove-unneeded-assets.test.mjs",
     "test:android": "cd android && ./gradlew test testAnylineAssetsPattern testAnylineSdkAbis",
-    "test:ios": "CAPACITOR_ANYLINE_CORE_ONLY=1 swift test"
+    "test:ios": "CAPACITOR_ANYLINE_CORE_ONLY=1 swift test",
+    "example:install": "cd example-app && npm install --no-audit --no-fund",
+    "example:android:build": "npm run example:install && cd example-app && npm run build && npx cap sync android && cd android && ./gradlew assembleDebug",
+    "example:ios:build": "npm run example:install && cd example-app && npm run build && npx cap sync ios && xcodebuild build -project ios/App/App.xcodeproj -scheme App -destination generic/platform=iOS -derivedDataPath ../build/example-ios CODE_SIGNING_ALLOWED=NO"
   },
   "devDependencies": {
     "@capacitor/android": "^8.6.2",

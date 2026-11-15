@@ -56,7 +56,7 @@ jobs:
           if [ "$EVENT" = "pull_request" ]; then
             files=$(git diff --name-only "$BASE" HEAD)
             echo "$files"
-            shared='src/|package\.json$|package-lock\.json$|\.github/workflows/ci\.yaml$'
+            shared='src/|example-app/|package\.json$|package-lock\.json$|\.github/workflows/ci\.yaml$'
             ios=$(echo "$files" | grep -Eq "^(ios/|scripts/ios/|Package\.swift$|[^/]+\.podspec$|$shared|\.github/workflows/test-ios\.yaml$)" && echo true || echo false)
             android=$(echo "$files" | grep -Eq "^(android/|$shared|\.github/workflows/test-android\.yaml$)" && echo true || echo false)
             publish=false

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Anyline</title>
+    <meta name="viewport" content="viewport-fit=cover, width=device-width, initial-scale=1.0" />
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 16px; padding-top: env(safe-area-inset-top); }
+      label, input, textarea, button { display: block; margin: 6px 0; font-size: 16px; }
+      input, textarea { width: 100%; box-sizing: border-box; }
+      input[type='checkbox'] { display: inline; width: auto; }
+      textarea { font-family: ui-monospace, monospace; font-size: 13px; }
+      pre { white-space: pre-wrap; font-size: 13px; background: #f3f3f3; padding: 8px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Anyline</h1>
+      <p>Initialises the Anyline SDK with a licence key and opens the scanner with the scan view config below.</p>
+      <label for="licence">Anyline licence key for com.example.plugin</label>
+      <input id="licence" autocomplete="off" />
+      <label><input id="offline" type="checkbox" /> enableOfflineCache</label>
+      <button id="init">initAnylineSDK</button>
+      <button id="camera">Ask for the camera</button>
+      <label for="config">Scan view config</label>
+      <textarea id="config" rows="14" spellcheck="false"></textarea>
+      <button id="scan">scan</button>
+      <button id="memory">getMemoryInfo</button>
+      <pre id="log"></pre>
+    </main>
+    <script src="./js/example.js" type="module"></script>
+  </body>
+</html>

@@ -1,7 +1,8 @@
 name: Android tests
 # The Kotlin of android/ on the JVM with JUnit, against Capacitor's Android library from node_modules and the Anyline
-# SDK from Anyline's Maven repository, and the check of the asset pattern of anyline-assets.gradle. No emulator: a scan
-# needs a camera and an Anyline licence key.
+# SDK from Anyline's Maven repository, and the check of the asset pattern of anyline-assets.gradle. Then the example app
+# built with the plugin installed the way an app installs it. No emulator: a scan needs a camera and an Anyline licence
+# key.
 # Called by ci.yaml when something it covers changes, and for every push to main.
 on:
   workflow_call:
@@ -30,3 +31,36 @@ jobs:
           name: test-report-android
           path: android/build/reports/tests
           if-no-files-found: ignore
+  # The plugin as an app sees it: the example app installs it from the repository (file:..), `cap sync` registers it, and
+  # Gradle builds a debug APK, with anyline-assets.gradle applied by the app module. Then what the APK carries: the
+  # plugin's class, and of the SDK's scanner modules only the one anylineRetainAssetsPattern keeps.
+  app:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 24
+      - uses: actions/setup-java@v6.3.0
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v6.4.1
+      - run: npm ci
+      - run: npm run build
+      - run: npm run example:android:build
+      - name: The plugin is registered in the app
+        run: grep -q 'io.github.maximbelov.anyline.AnylinePlugin' example-app/android/app/src/main/assets/capacitor.plugins.json
+      - name: The APK carries the plugin and the barcode module only
+        run: |
+          apk=example-app/android/app/build/outputs/apk/debug/app-debug.apk
+          dexdump=$(find "$ANDROID_HOME/build-tools" -mindepth 2 -maxdepth 2 -name dexdump | sort -V | tail -1)
+          dir=$(mktemp -d)
+          unzip -q -o "$apk" 'classes*.dex' -d "$dir"
+          plugin=$(for dex in "$dir"/classes*.dex; do "$dexdump" "$dex"; done | grep -c "Class descriptor  : 'Lio/github/maximbelov/anyline/AnylinePlugin;'" || true)
+          echo "definitions of the plugin in the APK: $plugin"
+          [ "$plugin" = "1" ]
+          modules=$(unzip -Z1 "$apk" | sed -n 's#^assets/anyline/\(module_[^/]*\)/.*#\1#p' | sort -u | tr '\n' ' ')
+          echo "Anyline modules in the APK: $modules"
+          [ "$modules" = "module_barcode " ]

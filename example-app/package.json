@@ -1,0 +1,28 @@
+{
+  "name": "capacitor-anyline-example",
+  "version": "1.0.0",
+  "description": "Example app for capacitor-anyline",
+  "type": "module",
+  "keywords": [
+    "capacitor",
+    "mobile"
+  ],
+  "scripts": {
+    "start": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.6.2",
+    "@capacitor/core": "^8.6.2",
+    "@capacitor/ios": "^8.6.2",
+    "capacitor-anyline": "file:.."
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.6.2",
+    "vite": "^8.3.8"
+  },
+  "author": "",
+  "license": "MIT",
+  "private": true
+}

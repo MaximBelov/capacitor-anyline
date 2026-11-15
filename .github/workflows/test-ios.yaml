@@ -1,7 +1,8 @@
 name: iOS tests
 # The Swift of ios/. The Anyline SDK ships no macOS slice and no arm64 simulator slice, so the plugin layer cannot run on
 # a simulator of an arm64 runner: the core (the result mapping, the waiting calls) is tested with `swift test` on the Mac
-# itself, and the package is built for a generic iOS device. The build-phase script is tested by `npm test`.
+# itself, the package is built for a generic iOS device, and so is the example app with the plugin installed the way an
+# app installs it. The build-phase script is tested by `npm test`, and runs for real in the example app's build.
 # Called by ci.yaml when something it covers changes, and for every push to main; it can also be run by hand.
 on:
   workflow_call:
@@ -25,6 +26,36 @@ jobs:
         with:
           node-version: 24
       - run: npm run verify:ios
+      - name: Stop what the build left running
+        if: always()
+        run: pkill -f '[x]codebuild' || true
+  # The plugin as an app sees it: the example app installs it from the repository (file:..), `cap sync` writes it into the
+  # app's Swift package, and xcodebuild builds the app for a generic iOS device without signing. Then what the app
+  # carries: one Anyline.framework, and in its AnylineResources.bundle only the module the app's
+  # ANYLINE_RETAIN_ASSETS_PATTERN keeps, which the Run Script phase calling scripts/ios/remove-unneeded-assets.sh leaves.
+  app:
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: npm run build
+      - run: npm run example:ios:build
+      - name: The plugin is in the app's Swift package
+        run: grep -q 'CapacitorAnyline' example-app/ios/App/CapApp-SPM/Package.swift
+      - name: The app embeds one Anyline SDK, with the barcode module only
+        run: |
+          app=$(find build/example-ios/Build/Products -name 'App.app' -type d | head -1)
+          copies=$(find "$app" -name 'Anyline.framework' -type d | wc -l | tr -d ' ')
+          echo "Anyline.framework copies in $app: $copies"
+          [ "$copies" = "1" ]
+          bundle=$(find "$app" -name 'AnylineResources.bundle' -type d | head -1)
+          modules=$(find "$bundle" -mindepth 1 -maxdepth 1 -type d -name 'module_*' -exec basename {} \; | sort | tr '\n' ' ')
+          echo "modules in $bundle: $modules"
+          [ "$modules" = "module_barcode " ]
       - name: Stop what the build left running
         if: always()
         run: pkill -f '[x]codebuild' || true
