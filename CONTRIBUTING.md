@@ -49,4 +49,9 @@ package's Settings > Trusted Publisher on npmjs.com names this repository and th
 environment, so there is no npm token to keep. A release is a version bump merged to `main`; there is nothing to run by
 hand.
 
+The Anyline SDK is pinned in `android/build.gradle` (`anylineSdkVersion`) and, as the lower bound, in `Package.swift`, with
+`~> major.minor` in the podspec. `.github/workflows/pins.yaml` opens a pull request every Monday when a newer release is out
+on either platform, which needs Settings > Actions > General > "Allow GitHub Actions to create and approve pull requests"
+(`node scripts/check-pins.mjs` says where each pin stands).
+
 > **Note**: The [`files`](https://docs.npmjs.com/cli/v7/configuring-npm/package-json#files) array in `package.json` specifies which files get published. If you rename files/directories or add files elsewhere, you may need to update it.
