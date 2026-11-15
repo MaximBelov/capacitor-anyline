@@ -13,6 +13,18 @@ SDK present its own full-screen scanner. The newer "Infinity" API of the Cordova
 | Android  | `io.anyline:anylinesdk` 56.6.0, from `https://mobile-sdk-android.anyline.io/release/`          |
 | iOS      | `https://github.com/Anyline/anyline-ocr-spm-module.git` from 56.6.0 (product `AnylinePackage`) |
 
+## Why this plugin exists
+
+This is an independent wrapper, not Anyline's. Anyline publishes the SDK and its own wrappers for Cordova and React
+Native; this plugin is written from the SDK's public documentation and talks to the SDK the same way those wrappers do.
+It is maintained separately so that a fix in the wrapper layer (how a Capacitor app loads assets, how initialisation is
+serialised, what happens on a device the SDK cannot run on, how much of the SDK a build carries) ships as soon as it is
+written, instead of waiting for a change to be accepted and released upstream. Anything that is a defect in the SDK
+itself is still reported to Anyline.
+
+The SDK is not part of this repository. It is fetched from Anyline at build time and is used under Anyline's own licence
+terms, which require a licence key for the app.
+
 ## Install
 
 The package is published to GitHub Packages. Point the `@maximbelov` scope at it in the app's `.npmrc`, with a token
@@ -354,6 +366,8 @@ the SDK documents for its wrappers can be used.
 
 Construct a type with a set of properties K of type T
 
-<code>{ [P in K]: T; }</code>
+<code>{
+ [P in K]: T;
+ }</code>
 
 </docgen-api>
