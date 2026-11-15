@@ -69,7 +69,7 @@ public class AnylinePlugin: CAPPlugin, CAPBridgedPlugin {
         }
         pending.put(AnylineSessionClient.scanSlot, call)?
             .reject(AnylineMessages.superseded, AnylineErrorCode.scanFailed)
-        ALWrapperSessionProvider.requestScanStart(withWrapperSessionScanStartRequest: request)
+        ALWrapperSessionProvider.requestScanStart(with: request)
     }
 }
 
@@ -113,7 +113,7 @@ final class AnylineSessionClient: NSObject, ALWrapperSessionClientDelegate {
         let composite = type.value == ALViewPluginType.viewPluginComposite().value
         do {
             let json = try ALLegacyPluginHelper.scanResultsWithImagePath(
-                fromExportedScanResults: Self.exportedResults(of: scanResultsResponse),
+                from: Self.exportedResults(of: scanResultsResponse),
                 viewPluginType: type)
             call.resolve(try ScanResults.callResult(fromJSON: json, composite: composite))
         } catch {

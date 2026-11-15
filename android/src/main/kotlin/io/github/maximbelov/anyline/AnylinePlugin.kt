@@ -19,8 +19,7 @@ import io.anyline.wrapper.config.WrapperSessionUCRReportResponse
 import io.anyline2.WrapperInfo
 import io.anyline2.wrapper.WrapperSessionClientInterface
 import io.anyline2.wrapper.WrapperSessionProvider
-import io.anyline2.wrapper.extensions.WrapperSessionScanStartRequestExtensionKt
-import io.anyline2.wrapper.extensions.WrapperSessionSdkInitializationResponseExtensionKt
+import io.anyline2.wrapper.extensions.toJsonObject
 import io.anyline2.wrapper.legacy.LegacyPluginHelper
 
 /**
@@ -44,7 +43,7 @@ class AnylinePlugin : Plugin() {
             if (initializationResponse.initialized == true) {
                 call.resolve()
             } else {
-                val json = WrapperSessionSdkInitializationResponseExtensionKt.toJsonObject(initializationResponse)
+                val json = initializationResponse.toJsonObject()
                 call.reject(json.toString(), AnylineErrorCode.INIT_FAILED)
             }
         }
@@ -128,7 +127,7 @@ class AnylinePlugin : Plugin() {
             return
         }
         pending.putScan(call)?.reject(AnylineMessages.SUPERSEDED, AnylineErrorCode.SCAN_FAILED)
-        WrapperSessionProvider.requestScanStart(WrapperSessionScanStartRequestExtensionKt.toJsonObject(request).toString())
+        WrapperSessionProvider.requestScanStart(request.toJsonObject().toString())
     }
 
     companion object {
