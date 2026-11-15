@@ -23,7 +23,7 @@ class AnylinePluginTest {
             .filter { it.isAnnotationPresent(PluginMethod::class.java) }
             .map { it.name }
             .sorted()
-        assertEquals(listOf("initAnylineSDK", "scan"), methods)
+        assertEquals(listOf("getMemoryInfo", "initAnylineSDK", "scan"), methods)
         methods.forEach { AnylinePlugin::class.java.getMethod(it, PluginCall::class.java) }
     }
 

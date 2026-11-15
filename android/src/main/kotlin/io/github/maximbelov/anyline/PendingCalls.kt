@@ -3,23 +3,18 @@ package io.github.maximbelov.anyline
 import com.getcapacitor.PluginCall
 
 /**
- * The calls waiting for the SDK: at most one initialisation and one scan, since the SDK's session answers one of each
- * at a time. A new call replaces a waiting one, which is handed back so it can be rejected rather than left hanging.
- * The SDK answers on its own threads, so every access is synchronised.
+ * The scan waiting for the SDK: at most one, since the SDK's session runs one scan at a time. A new scan replaces a
+ * waiting one, which is handed back so it can be rejected rather than left hanging. The SDK answers on its own threads,
+ * so every access is synchronised. Initialisations are held by [InitGate].
  */
 class PendingCalls {
     private val slots = Slots<PluginCall>()
-
-    fun putInit(call: PluginCall): PluginCall? = slots.put(INIT, call)
-
-    fun takeInit(): PluginCall? = slots.take(INIT)
 
     fun putScan(call: PluginCall): PluginCall? = slots.put(SCAN, call)
 
     fun takeScan(): PluginCall? = slots.take(SCAN)
 
     private companion object {
-        const val INIT = "init"
         const val SCAN = "scan"
     }
 }

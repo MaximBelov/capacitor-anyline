@@ -1,6 +1,6 @@
 {
   "name": "@maximbelov/capacitor-anyline",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "The Anyline scanner SDK for Capacitor: initialise it with a licence key and scan with an Anyline scan view config, on Android and iOS",
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.js",
@@ -56,7 +56,7 @@
     "test:unit:coverage": "vitest run --coverage",
     "test:parity": "node --test test/unit/platform-parity.test.mjs",
     "test:scripts": "node --test test/unit/remove-unneeded-assets.test.mjs",
-    "test:android": "cd android && ./gradlew test testAnylineAssetsPattern",
+    "test:android": "cd android && ./gradlew test testAnylineAssetsPattern testAnylineSdkAbis",
     "test:ios": "CAPACITOR_ANYLINE_CORE_ONLY=1 swift test"
   },
   "devDependencies": {

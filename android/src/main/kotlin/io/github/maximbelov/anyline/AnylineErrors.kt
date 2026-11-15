@@ -6,6 +6,7 @@ object AnylineErrorCode {
     const val SCAN_FAILED = "SCAN_FAILED"
     const val INIT_FAILED = "INIT_FAILED"
     const val INVALID_CONFIG = "INVALID_CONFIG"
+    const val UNSUPPORTED_DEVICE = "UNSUPPORTED_DEVICE"
 }
 
 /** The messages both platforms reject with where the SDK gives none. */
@@ -16,4 +17,5 @@ object AnylineMessages {
     const val MISSING_CONFIG = "scan needs a config object"
     const val SUPERSEDED = "Another scan was started before this one ended"
     const val NO_RESULT = "The scan ended without a result"
+    const val UNSUPPORTED_DEVICE = "The Anyline scanner cannot run on this device: its native code is not available for this CPU"
 }

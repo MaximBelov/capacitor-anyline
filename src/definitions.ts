@@ -61,16 +61,40 @@ export interface AnylineScanResult {
  *   initialisation response as JSON, as io-anyline-cordova reported it.
  * - `INVALID_CONFIG`: a required option is missing or is not of the right type, or the SDK could not read the scan
  *   view config.
+ * - `UNSUPPORTED_DEVICE`: the SDK cannot run on this device, because its native code is not available for the CPU the
+ *   app runs on (Android: the SDK ships ARM code only). Raised by `initAnylineSDK` and `scan`, instead of the scanner
+ *   crashing the app. Never raised on iOS.
  */
-export type AnylineErrorCode = 'CANCELED' | 'SCAN_FAILED' | 'INIT_FAILED' | 'INVALID_CONFIG';
+export type AnylineErrorCode = 'CANCELED' | 'SCAN_FAILED' | 'INIT_FAILED' | 'INVALID_CONFIG' | 'UNSUPPORTED_DEVICE';
+
+/**
+ * The app process's memory, as the system reports it. A field the system does not report is left out.
+ */
+export interface MemoryInfo {
+  /**
+   * Bytes still available. iOS: what the process can allocate before the system terminates it
+   * (`os_proc_available_memory`). Android: the memory available to the whole system (`ActivityManager.MemoryInfo.availMem`).
+   */
+  availableBytes?: number;
+  /**
+   * Bytes the process uses. iOS: its physical footprint (`phys_footprint`), the figure the system's limit is measured
+   * against. Android: its proportional set size (`Debug.getPss()`), which counts the Java and native heaps, graphics
+   * and mapped files.
+   */
+  footprintBytes?: number;
+}
 
 export interface AnylinePlugin {
   /**
    * Initialises the Anyline SDK with a licence key. Call it once before the first scan; the SDK keeps the licence for
    * the life of the app process.
    *
-   * Resolves once the SDK is ready to scan. Rejects with `INIT_FAILED` when the SDK refuses the key, and with
-   * `INVALID_CONFIG` when `licenseKey` is missing.
+   * Resolves once the SDK is ready to scan. Rejects with `INIT_FAILED` when the SDK refuses the key, with
+   * `INVALID_CONFIG` when `licenseKey` is missing, and with `UNSUPPORTED_DEVICE` when the SDK cannot run on the device.
+   *
+   * One initialisation runs at a time. A call made while one with the same key runs settles with it; a call with
+   * another key waits for it to settle, then runs. A call with the key the SDK was last initialised with resolves at
+   * once, without initialising again.
    *
    * @since 0.1.0
    */
@@ -82,10 +106,19 @@ export interface AnylinePlugin {
    *
    * Rejects with `CANCELED` (message `Canceled`) when the user closes the scanner (the Done button on iOS, Back on
    * Android), with `SCAN_FAILED` when the SDK cannot scan (for example before `initAnylineSDK` succeeded), and with
-   * `INVALID_CONFIG` when `config` is missing or the SDK cannot read it. A scan started while another is open
-   * replaces it: the earlier call rejects with `SCAN_FAILED`.
+   * `INVALID_CONFIG` when `config` is missing or the SDK cannot read it, and with `UNSUPPORTED_DEVICE` when the SDK
+   * cannot run on the device. A scan started while another is open replaces it: the earlier call rejects with
+   * `SCAN_FAILED`.
    *
    * @since 0.1.0
    */
   scan(options: ScanOptions): Promise<AnylineScanResult>;
+
+  /**
+   * Reads the app process's memory, cheaply and with nothing personal in it, for an app to record next to a scan
+   * (before `initAnylineSDK`, after it, after `scan`), so a termination by the system can be told apart from a crash.
+   *
+   * @since 0.2.0
+   */
+  getMemoryInfo(): Promise<MemoryInfo>;
 }

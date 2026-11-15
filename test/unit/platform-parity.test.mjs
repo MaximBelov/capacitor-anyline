@@ -21,7 +21,7 @@ const swiftErrors = read('ios/Sources/CapacitorAnylineCore/AnylineErrors.swift')
 const kotlinErrors = read(`${kotlinDir}/AnylineErrors.kt`);
 
 test('the API declares its methods', () => {
-  assert.deepEqual(api, ['initAnylineSDK', 'scan']);
+  assert.deepEqual(api, ['getMemoryInfo', 'initAnylineSDK', 'scan']);
 });
 
 test('iOS registers exactly the methods of the API', () => {
@@ -54,7 +54,7 @@ test('both platforms reject with the same error codes, and only codes the API de
 });
 
 test('both platforms use the same messages, the cancel one being the string io-anyline-cordova used', () => {
-  const iosMessages = [...swiftErrors.matchAll(/static let (\w+) = "([^"]*)"/g)]
+  const iosMessages = [...swiftErrors.matchAll(/static let (\w+) =\s*"([^"]*)"/g)]
     .filter((m) => !/^[A-Z_]+$/.test(m[2]))
     .map((m) => m[2])
     .sort();
@@ -126,6 +126,35 @@ test('the npm package carries the files an app applies or runs', () => {
   for (const path of ['android/anyline-assets.gradle', 'scripts/ios/remove-unneeded-assets.sh']) {
     assert.ok(files.includes(path), `${path} is not in package.json files`);
   }
+});
+
+test('both platforms run every initialisation through the init gate, and never reject one as superseded', () => {
+  assert.match(kotlin, /initGate\.request\(/);
+  assert.match(kotlin, /initGate\.settle\(/);
+  assert.match(swift, /initGate\.request\(/);
+  assert.match(swift, /initGate\.settle\(/);
+  assert.doesNotMatch(kotlin, /SUPERSEDED, AnylineErrorCode\.INIT_FAILED/);
+  assert.doesNotMatch(swift, /superseded, AnylineErrorCode\.initFailed/);
+  for (const path of ['ios/Sources/CapacitorAnylineCore/InitGate.swift', `${kotlinDir}/InitGate.kt`]) {
+    assert.ok(read(path).length > 0, path);
+  }
+});
+
+test('getMemoryInfo reports the same fields on both platforms as the API declares', () => {
+  const declared = [...definitions.match(/export interface MemoryInfo \{([\s\S]*?)\n\}/)[1].matchAll(/^  (\w+)\?:/gm)]
+    .map((m) => m[1])
+    .sort();
+  assert.deepEqual(declared, ['availableBytes', 'footprintBytes']);
+  const iosFields = [...swift.matchAll(/result\["(\w+)"\]/g)].map((m) => m[1]).sort();
+  const androidFields = [...kotlin.matchAll(/result\.put\("(\w+)"/g)].map((m) => m[1]).sort();
+  assert.deepEqual(iosFields, declared);
+  assert.deepEqual(androidFields, declared);
+});
+
+test('Android refuses an unsupported device before every call into the SDK', () => {
+  assert.match(kotlin, /fun initAnylineSDK[\s\S]*?ensureSession\(\)[\s\S]*?UNSUPPORTED_DEVICE/);
+  assert.match(kotlin, /fun scan[\s\S]*?ensureSession\(\)[\s\S]*?UNSUPPORTED_DEVICE/);
+  assert.doesNotMatch(kotlin, /catch \(e: Exception\)/, 'catch Throwable, so a LinkageError rejects instead of crashing');
 });
 
 test('the README documents every method', () => {

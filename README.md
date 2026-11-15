@@ -55,6 +55,7 @@ copy of the SDK.
   The plugin declares the `CAMERA` and `VIBRATE` permissions; the SDK declares its scan activity. The SDK
   version can be changed with `anylineSdkVersion` in the app's `variables.gradle`. Make sure the camera permission is
   granted before a scan, as with `io-anyline-cordova`.
+
 - **iOS**: add `NSCameraUsageDescription` to the app's `Info.plist`. The SDK asks for the camera itself when the scanner
   opens. With CocoaPods the plugin depends on the `Anyline` pod (`~> 56.6`).
 
@@ -138,11 +139,37 @@ A relative path in a scan view config (a model file, a sound) is resolved by the
 - **iOS**: the plugin passes the app bundle as the config's location and no asset prefix, as `io-anyline-cordova` did, so
   a relative path is read from the app bundle, where Capacitor's web build is `public/`.
 
+## Robustness
+
+- **One initialisation at a time.** The SDK's initialisation must not run twice at once, so the plugin never asks for a
+  second one while the first is being answered. A call to `initAnylineSDK` made meanwhile with the same key settles
+  together with the running one; a call with a different key waits for it and then runs. Once the SDK has accepted a
+  key, calling `initAnylineSDK` again with that key resolves at once without initialising again; after a refusal, the
+  next call initialises again.
+- **One queue into the SDK on iOS.** Every call the plugin makes into the SDK runs on a single serial queue the plugin
+  owns, so no two of them overlap, whatever thread a call or an SDK callback arrives on. The plugin draws no UI of its
+  own (the SDK presents and dismisses its scanner), and it keeps a waiting call only until it settles, holding nothing
+  of the SDK's scanner or its results after that.
+- **Devices the SDK cannot run on (Android).** The SDK ships native code for ARM only (`arm64-v8a`, `armeabi-v7a`).
+  Before its first use, the plugin checks that the device reports one of those ABIs and that the SDK's native library
+  loads into the app's process; when either fails, `initAnylineSDK` and `scan` reject with `UNSUPPORTED_DEVICE` instead
+  of the scanner crashing the app. Anything else the SDK throws while the plugin calls it, a failed native link
+  included, rejects the call. The SDK's session is set up on the first call, so an app that never scans never loads the
+  SDK's native code.
+
+### Memory
+
+`getMemoryInfo()` reads the app process's memory as the system reports it: on iOS what the process can still allocate
+and its physical footprint, on Android the memory available to the system and the process's proportional set size. It
+is cheap and carries nothing personal, so an app can record it before `initAnylineSDK`, after it and after `scan`, and
+tell a termination by the system apart from a crash.
+
 ## Differences from io-anyline-cordova
 
 - `Anyline.initAnylineSDK({ licenseKey })` and `Anyline.scan({ config })` take one options object and return promises,
   instead of `window.Anyline.initAnylineSDK(licenseKey, onSuccess, onFailure)` and `scan(config, onSuccess, onFailure)`.
-- A rejection is an error with a `code` (`CANCELED`, `SCAN_FAILED`, `INIT_FAILED`, `INVALID_CONFIG`) and a message,
+- A rejection is an error with a `code` (`CANCELED`, `SCAN_FAILED`, `INIT_FAILED`, `INVALID_CONFIG`,
+  `UNSUPPORTED_DEVICE`) and a message,
   not a bare string. The message is the string the Cordova plugin rejected with: `Canceled` for a cancel, the SDK's
   error for a failed scan, the SDK's initialisation response as JSON for a refused key. `isScanCanceled(error)` takes
   both forms.
@@ -150,7 +177,8 @@ A relative path in a scan view config (a model file, a sound) is resolved by the
 - A composite scan resolves with `{ results: [...] }`; the Cordova plugin resolved with the array itself.
 - The result callbacks named in a scan's callback config (`onResultEventName`) are not supported: the result is what
   `scan` resolves with.
-- Only `initAnylineSDK` and `scan`: no `checkLicense`, `getSDKVersion`, `exportCachedEvents`, `tryStopScan` or Infinity
+- A second `initAnylineSDK` while one runs joins it or waits for it, instead of starting a second initialisation.
+- Only `initAnylineSDK`, `scan` and `getMemoryInfo`: no `checkLicense`, `getSDKVersion`, `exportCachedEvents`, `tryStopScan` or Infinity
   API.
 - Android: the asset prefix is `public/assets` instead of `www/assets`, and the module filter is the
   `anylineRetainAssetsPattern` Gradle property instead of the `anyline-retain-assets-pattern` preference in
@@ -161,7 +189,9 @@ A relative path in a scan view config (a model file, a sound) is resolved by the
 - `npm test` runs the TypeScript unit tests, the parity check (both platforms implement exactly the API, with the same
   error codes and messages, version and module lists) and the iOS build-phase script against a fake app bundle.
 - `npm run test:android` runs the JVM tests of the Kotlin (the plugin's name and methods, the result mapping, the
-  waiting calls) and the check of the Android asset pattern.
+  waiting calls, the one-at-a-time initialisation, the device check), the check of the Android asset pattern, and the
+  check that the ABIs the plugin accepts are the ones the SDK's AAR ships native code for.
+- `npm run test:ios` also covers the one-at-a-time initialisation, including concurrent callers.
 - `npm run test:ios` runs the Swift core's tests on a Mac (`swift test`). The Anyline SDK has no macOS or arm64
   simulator slice, so the plugin layer is built for a device (`npm run verify:ios`) rather than tested on a simulator.
 
@@ -173,6 +203,7 @@ A scan itself needs a camera, a licence key and a phone, so it is not covered by
 
 * [`initAnylineSDK(...)`](#initanylinesdk)
 * [`scan(...)`](#scan)
+* [`getMemoryInfo()`](#getmemoryinfo)
 * [Interfaces](#interfaces)
 * [Type Aliases](#type-aliases)
 
@@ -190,8 +221,12 @@ initAnylineSDK(options: InitAnylineSDKOptions) => Promise<void>
 Initialises the Anyline SDK with a licence key. Call it once before the first scan; the SDK keeps the licence for
 the life of the app process.
 
-Resolves once the SDK is ready to scan. Rejects with `INIT_FAILED` when the SDK refuses the key, and with
-`INVALID_CONFIG` when `licenseKey` is missing.
+Resolves once the SDK is ready to scan. Rejects with `INIT_FAILED` when the SDK refuses the key, with
+`INVALID_CONFIG` when `licenseKey` is missing, and with `UNSUPPORTED_DEVICE` when the SDK cannot run on the device.
+
+One initialisation runs at a time. A call made while one with the same key runs settles with it; a call with
+another key waits for it to settle, then runs. A call with the key the SDK was last initialised with resolves at
+once, without initialising again.
 
 | Param         | Type                                                                    |
 | ------------- | ----------------------------------------------------------------------- |
@@ -213,8 +248,9 @@ closed on it (the config's `cancelOnResult: true`).
 
 Rejects with `CANCELED` (message `Canceled`) when the user closes the scanner (the Done button on iOS, Back on
 Android), with `SCAN_FAILED` when the SDK cannot scan (for example before `initAnylineSDK` succeeded), and with
-`INVALID_CONFIG` when `config` is missing or the SDK cannot read it. A scan started while another is open
-replaces it: the earlier call rejects with `SCAN_FAILED`.
+`INVALID_CONFIG` when `config` is missing or the SDK cannot read it, and with `UNSUPPORTED_DEVICE` when the SDK
+cannot run on the device. A scan started while another is open replaces it: the earlier call rejects with
+`SCAN_FAILED`.
 
 | Param         | Type                                                |
 | ------------- | --------------------------------------------------- |
@@ -223,6 +259,22 @@ replaces it: the earlier call rejects with `SCAN_FAILED`.
 **Returns:** <code>Promise&lt;<a href="#anylinescanresult">AnylineScanResult</a>&gt;</code>
 
 **Since:** 0.1.0
+
+--------------------
+
+
+### getMemoryInfo()
+
+```typescript
+getMemoryInfo() => Promise<MemoryInfo>
+```
+
+Reads the app process's memory, cheaply and with nothing personal in it, for an app to record next to a scan
+(before `initAnylineSDK`, after it, after `scan`), so a termination by the system can be told apart from a crash.
+
+**Returns:** <code>Promise&lt;<a href="#memoryinfo">MemoryInfo</a>&gt;</code>
+
+**Since:** 0.2.0
 
 --------------------
 
@@ -276,6 +328,16 @@ The options of `scan`.
 | **`config`** | <code><a href="#anylinescanviewconfig">AnylineScanViewConfig</a></code> | The scan view config. |
 
 
+#### MemoryInfo
+
+The app process's memory, as the system reports it. A field the system does not report is left out.
+
+| Prop                 | Type                | Description                                                                                                                                                                                                                                          |
+| -------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`availableBytes`** | <code>number</code> | Bytes still available. iOS: what the process can allocate before the system terminates it (`os_proc_available_memory`). Android: the memory available to the whole system (`ActivityManager.<a href="#memoryinfo">MemoryInfo</a>.availMem`).         |
+| **`footprintBytes`** | <code>number</code> | Bytes the process uses. iOS: its physical footprint (`phys_footprint`), the figure the system's limit is measured against. Android: its proportional set size (`Debug.getPss()`), which counts the Java and native heaps, graphics and mapped files. |
+
+
 ### Type Aliases
 
 
@@ -292,8 +354,6 @@ the SDK documents for its wrappers can be used.
 
 Construct a type with a set of properties K of type T
 
-<code>{
- [P in K]: T;
- }</code>
+<code>{ [P in K]: T; }</code>
 
 </docgen-api>

@@ -103,4 +103,31 @@ tasks.register('testAnylineAssetsPattern') {
         println 'anylineIgnoreAssetsPatterns: all cases pass'
     }
 }
-tasks.named('check') { dependsOn 'testAnylineAssetsPattern' }
+// DeviceSupport.SDK_ABIS has to be the ABIs the SDK's AAR ships native code for: read them from the AAR itself, so a new
+// SDK version that adds or drops one fails here rather than on a phone.
+def anylineSdkAar = configurations.detachedConfiguration(dependencies.create("io.anyline:anylinesdk:$anylineSdkVersion@aar"))
+tasks.register('testAnylineSdkAbis') {
+    group = 'verification'
+    description = 'Checks DeviceSupport.SDK_ABIS against the jni folders of the Anyline SDK AAR.'
+    def source = file('src/main/kotlin/io/github/maximbelov/anyline/DeviceSupport.kt')
+    inputs.file(source)
+    inputs.files(anylineSdkAar)
+    doLast {
+        def aar = anylineSdkAar.singleFile
+        def shipped = new java.util.TreeSet<String>()
+        new java.util.zip.ZipFile(aar).withCloseable { zip ->
+            zip.entries().each { entry ->
+                def m = entry.name =~ /^jni\/([^\/]+)\/[^\/]+\.so$/
+                if (m.matches()) {
+                    shipped << m.group(1)
+                }
+            }
+        }
+        def declared = new java.util.TreeSet<String>((source.text =~ /val SDK_ABIS = listOf\(([^)]*)\)/)[0][1].findAll(/"([^"]+)"/) { full, abi -> abi })
+        if (shipped != declared) {
+            throw new GradleException("DeviceSupport.SDK_ABIS is $declared, but ${aar.name} ships native code for $shipped")
+        }
+        println "Anyline SDK ABIs: $shipped"
+    }
+}
+tasks.named('check') { dependsOn 'testAnylineAssetsPattern', 'testAnylineSdkAbis' }
