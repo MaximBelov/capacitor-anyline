@@ -1,6 +1,10 @@
 # The pins this repository carries, moved by Dependabot: the npm toolchain (Capacitor included), the Gradle build of
-# android/ (the Anyline SDK included), the Swift packages that Package.swift names (the Anyline SDK included), and the
-# actions the workflows use.
+# android/ (the Anyline SDK included), and the actions the workflows use.
+#
+# No `swift` ecosystem: resolving Package.swift downloads the Anyline SDK's binary target from Anyline's own host
+# (mobile-sdk-ios.anyline.io), which answers Dependabot's proxy with 403, so every Swift update job fails. Package.swift
+# takes both packages with `from:` lower bounds and the app's Package.resolved pins the versions, so there is no exact pin
+# here for it to move.
 version: 2
 updates:
   - package-ecosystem: npm
@@ -20,10 +24,6 @@ updates:
         versions: ['>=6.1.0']
   - package-ecosystem: gradle
     directory: /android
-    schedule:
-      interval: weekly
-  - package-ecosystem: swift
-    directory: /
     schedule:
       interval: weekly
   - package-ecosystem: github-actions

@@ -1,5 +1,5 @@
 {
-  "name": "capacitor-anyline",
+  "name": "@maximbelov/capacitor-anyline",
   "version": "0.1.0",
   "description": "The Anyline scanner SDK for Capacitor: initialise it with a licence key and scan with an Anyline scan view config, on Android and iOS",
   "main": "dist/plugin.cjs.js",
@@ -14,7 +14,7 @@
     "ios/Sources",
     "scripts/ios/remove-unneeded-assets.sh",
     "Package.swift",
-    "CapacitorAnyline.podspec",
+    "MaximbelovCapacitorAnyline.podspec",
     "LICENSE"
   ],
   "author": "Maxim Belov",
@@ -38,7 +38,7 @@
   ],
   "scripts": {
     "verify": "npm run verify:ios && npm run verify:android && npm run verify:web",
-    "verify:ios": "xcodebuild build -scheme CapacitorAnyline -destination generic/platform=iOS -derivedDataPath build/ios-device",
+    "verify:ios": "xcodebuild build -scheme MaximbelovCapacitorAnyline -destination generic/platform=iOS -derivedDataPath build/ios-device",
     "verify:android": "cd android && ./gradlew clean build test",
     "verify:web": "npm run build",
     "lint": "npm run eslint && npm run prettier -- --check && npm run swiftlint -- lint",
@@ -89,6 +89,9 @@
     "android": {
       "src": "android"
     }
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
   },
   "engines": {
     "node": ">=20"

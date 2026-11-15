@@ -1,4 +1,4 @@
-# capacitor-anyline
+# @maximbelov/capacitor-anyline
 
 The [Anyline](https://anyline.com) scanner SDK for Capacitor: initialise it with a licence key, then open the scanner
 with an Anyline scan view config and get the result back as JSON. Android and iOS.
@@ -15,10 +15,21 @@ SDK present its own full-screen scanner. The newer "Infinity" API of the Cordova
 
 ## Install
 
+The package is published to GitHub Packages. Point the `@maximbelov` scope at it in the app's `.npmrc`, with a token
+that can read packages (`read:packages`):
+
+```ini
+@maximbelov:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
+```
+
 ```bash
-npm install capacitor-anyline
+npm install @maximbelov/capacitor-anyline
 npx cap sync
 ```
+
+`cap sync` names the plugin from the package name: the Swift package and product `MaximbelovCapacitorAnyline` (and the
+pod of the same name), and the Gradle project `:maximbelov-capacitor-anyline`.
 
 Requires Capacitor 8, Android 8.0 (API 26) or newer and iOS 15 or newer. You need an Anyline licence key for the app's
 bundle identifier and application id. There is no web implementation: every call rejects with `UNAVAILABLE` in a
@@ -36,7 +47,7 @@ copy of the SDK.
 ## Usage
 
 ```ts
-import { Anyline, isScanCanceled } from 'capacitor-anyline';
+import { Anyline, isScanCanceled } from '@maximbelov/capacitor-anyline';
 
 await Anyline.initAnylineSDK({ licenseKey: 'YOUR_LICENSE_KEY' });
 
@@ -83,7 +94,7 @@ ext {
 and apply the plugin's Gradle file from `android/app/build.gradle`:
 
 ```groovy
-apply from: project(':capacitor-anyline').file('anyline-assets.gradle')
+apply from: project(':maximbelov-capacitor-anyline').file('anyline-assets.gradle')
 ```
 
 Every other module is then left out of the APK through the app's `androidResources.ignoreAssetsPatterns`. The app module
@@ -97,7 +108,7 @@ Add a build setting `ANYLINE_RETAIN_ASSETS_PATTERN` to the app target, with the 
 (`module_barcode`), and a Run Script build phase **after** the frameworks are embedded:
 
 ```bash
-"${SRCROOT}/../../node_modules/capacitor-anyline/scripts/ios/remove-unneeded-assets.sh"
+"${SRCROOT}/../../node_modules/@maximbelov/capacitor-anyline/scripts/ios/remove-unneeded-assets.sh"
 ```
 
 It deletes the other modules from `AnylineResources.bundle` inside the embedded `Anyline.framework` and re-signs the

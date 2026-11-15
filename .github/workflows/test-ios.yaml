@@ -2,9 +2,13 @@ name: iOS tests
 # The Swift of ios/. The Anyline SDK ships no macOS slice and no arm64 simulator slice, so the plugin layer cannot run on
 # a simulator of an arm64 runner: the core (the result mapping, the waiting calls) is tested with `swift test` on the Mac
 # itself, and the package is built for a generic iOS device. The build-phase script is tested by `npm test`.
-# Called by ci.yaml when something it covers changes, and for every push to main.
+# Run by hand only (Actions > iOS tests > Run workflow): its jobs need macOS runners, whose minutes a private repository
+# pays for, so neither a push nor a pull request starts it, and ci.yaml does not wait on it. Run it before a release that
+# touches ios/, Package.swift or the podspec, or verify on a Mac with `npm run test:ios` and `npm run verify:ios`.
 on:
-  workflow_call:
+  workflow_dispatch:
+permissions:
+  contents: read
 jobs:
   core:
     runs-on: macos-26

@@ -10,6 +10,8 @@ import PackageDescription
 // The SDK comes from Anyline's own Swift package, and the plugin ships it: it is the app's one copy of
 // Anyline.xcframework. The lower bound is the SDK this plugin was written against; the app's Package.resolved pins
 // the version.
+// The package and its product are named as the Capacitor CLI names them for @maximbelov/capacitor-anyline (fixName in
+// @capacitor/cli): an app's CapApp-SPM refers to both by that name.
 let coreOnly = ProcessInfo.processInfo.environment["CAPACITOR_ANYLINE_CORE_ONLY"] != nil
 
 var targets: [Target] = [
@@ -33,7 +35,7 @@ if !coreOnly {
     ]
     products = [
         .library(
-            name: "CapacitorAnyline",
+            name: "MaximbelovCapacitorAnyline",
             targets: ["CapacitorAnylinePlugin"])
     ]
     targets += [
@@ -50,7 +52,7 @@ if !coreOnly {
 }
 
 let package = Package(
-    name: "CapacitorAnyline",
+    name: "MaximbelovCapacitorAnyline",
     platforms: [.iOS(.v15), .macOS(.v12)],
     products: products,
     dependencies: dependencies,

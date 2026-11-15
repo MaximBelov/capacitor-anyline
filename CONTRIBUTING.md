@@ -43,10 +43,8 @@ This template is integrated with ESLint, Prettier, and SwiftLint. Using these to
 
 ## Publishing
 
-There is a `prepublishOnly` hook in `package.json` which prepares the plugin before publishing, so all you need to do is run:
-
-```shell
-npm publish
-```
+The package is published to GitHub Packages as `@maximbelov/capacitor-anyline` by the `publish` job of
+`.github/workflows/ci.yaml`, on a push to `main` whose `package.json` version is not published yet. So a release is a
+version bump merged to `main`; there is nothing to run by hand.
 
 > **Note**: The [`files`](https://docs.npmjs.com/cli/v7/configuring-npm/package-json#files) array in `package.json` specifies which files get published. If you rename files/directories or add files elsewhere, you may need to update it.

@@ -81,6 +81,38 @@ test('the plugin ships the SDK on both platforms', () => {
   assert.doesNotMatch(gradle, /compileOnly ["']io\.anyline:anylinesdk/);
 });
 
+test('the native names are the ones the Capacitor CLI derives from the package name', () => {
+  // fixName and getGradlePackageName of @capacitor/cli: an app's CapApp-SPM, Podfile and capacitor.settings.gradle use
+  // these names, so a package, product or pod under any other name is not found by `cap sync`.
+  const { name, files, publishConfig } = JSON.parse(read('package.json'));
+  assert.equal(name, '@maximbelov/capacitor-anyline');
+  assert.equal(publishConfig.registry, 'https://npm.pkg.github.com');
+  const fixName = (id) => {
+    const n = id
+      .replace(/\//g, '_')
+      .replace(/-/g, '_')
+      .replace(/@/g, '')
+      .replace(/_\w/g, (m) => m[1].toUpperCase());
+    return n.charAt(0).toUpperCase() + n.slice(1);
+  };
+  const spm = fixName(name);
+  const gradle = name.replace('@', '').replace('/', '-');
+  assert.equal(spm, 'MaximbelovCapacitorAnyline');
+  const packageSwift = read('Package.swift');
+  assert.match(packageSwift, new RegExp(`^let package = Package\\(\\n    name: "${spm}",`, 'm'));
+  assert.match(packageSwift, new RegExp(`\\.library\\(\\n\\s+name: "${spm}",`));
+  assert.match(read(`${spm}.podspec`), new RegExp(`s\\.name = '${spm}'`));
+  assert.ok(files.includes(`${spm}.podspec`));
+  assert.match(read('package.json'), new RegExp(`-scheme ${spm} `));
+  for (const path of ['README.md', 'android/anyline-assets.gradle']) {
+    assert.ok(read(path).includes(`project(':${gradle}')`), `${path} does not name the Gradle project :${gradle}`);
+    assert.doesNotMatch(read(path), /project\(':capacitor-anyline'\)/);
+  }
+  for (const path of ['README.md', 'scripts/ios/remove-unneeded-assets.sh']) {
+    assert.ok(read(path).includes(`node_modules/${name}/scripts/ios/remove-unneeded-assets.sh`), path);
+  }
+});
+
 test('the iOS and Android lists of Anyline modules agree', () => {
   const script = read('scripts/ios/remove-unneeded-assets.sh');
   const iosModules = [...script.matchAll(/^DIR_\w+="(module_\w+)"$/gm)].map((m) => m[1]).sort();

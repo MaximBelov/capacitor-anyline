@@ -2,8 +2,9 @@ require 'json'
 
 package = JSON.parse(File.read(File.join(__dir__, 'package.json')))
 
+# The pod's name is the one the Capacitor CLI writes into an app's Podfile for @maximbelov/capacitor-anyline.
 Pod::Spec.new do |s|
-  s.name = 'CapacitorAnyline'
+  s.name = 'MaximbelovCapacitorAnyline'
   s.version = package['version']
   s.summary = package['description']
   s.license = package['license']
