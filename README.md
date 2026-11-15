@@ -38,7 +38,21 @@ browser.
 The plugin ships the Anyline SDK. Remove `io-anyline-cordova` from the app when you install it, so the app carries one
 copy of the SDK.
 
-- **Android**: the plugin declares the `CAMERA` and `VIBRATE` permissions; the SDK declares its scan activity. The SDK
+- **Android**: add Anyline's Maven repository to the app's `android/build.gradle`. The plugin's module declares it for
+  itself, but the app module packages the SDK and resolves it through its own repositories, so without it the build fails
+  with `Could not find io.anyline:anylinesdk`:
+
+  ```groovy
+  allprojects {
+      repositories {
+          google()
+          mavenCentral()
+          maven { url 'https://mobile-sdk-android.anyline.io/release/' }
+      }
+  }
+  ```
+
+  The plugin declares the `CAMERA` and `VIBRATE` permissions; the SDK declares its scan activity. The SDK
   version can be changed with `anylineSdkVersion` in the app's `variables.gradle`. Make sure the camera permission is
   granted before a scan, as with `io-anyline-cordova`.
 - **iOS**: add `NSCameraUsageDescription` to the app's `Info.plist`. The SDK asks for the camera itself when the scanner
@@ -278,6 +292,8 @@ the SDK documents for its wrappers can be used.
 
 Construct a type with a set of properties K of type T
 
-<code>{ [P in K]: T; }</code>
+<code>{
+ [P in K]: T;
+ }</code>
 
 </docgen-api>
