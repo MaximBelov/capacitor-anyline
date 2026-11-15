@@ -217,7 +217,6 @@ A scan itself needs a camera, a licence key and a phone, so it is not covered by
 * [`scan(...)`](#scan)
 * [`getMemoryInfo()`](#getmemoryinfo)
 * [Interfaces](#interfaces)
-* [Type Aliases](#type-aliases)
 
 </docgen-index>
 
@@ -340,6 +339,13 @@ The options of `scan`.
 | **`config`** | <code><a href="#anylinescanviewconfig">AnylineScanViewConfig</a></code> | The scan view config. |
 
 
+#### AnylineScanViewConfig
+
+An Anyline scan view config: the JSON io-anyline-cordova's `scan` took, with `cameraConfig`, `flashConfig`,
+`viewPluginConfig` (or `viewPluginCompositeConfig`) and `options`. It is handed to the SDK as it is, so every field
+the SDK documents for its wrappers can be used.
+
+
 #### MemoryInfo
 
 The app process's memory, as the system reports it. A field the system does not report is left out.
@@ -348,26 +354,5 @@ The app process's memory, as the system reports it. A field the system does not 
 | -------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **`availableBytes`** | <code>number</code> | Bytes still available. iOS: what the process can allocate before the system terminates it (`os_proc_available_memory`). Android: the memory available to the whole system (`ActivityManager.<a href="#memoryinfo">MemoryInfo</a>.availMem`).         |
 | **`footprintBytes`** | <code>number</code> | Bytes the process uses. iOS: its physical footprint (`phys_footprint`), the figure the system's limit is measured against. Android: its proportional set size (`Debug.getPss()`), which counts the Java and native heaps, graphics and mapped files. |
-
-
-### Type Aliases
-
-
-#### AnylineScanViewConfig
-
-An Anyline scan view config: the JSON io-anyline-cordova's `scan` took, with `cameraConfig`, `flashConfig`,
-`viewPluginConfig` (or `viewPluginCompositeConfig`) and `options`. It is handed to the SDK as it is, so every field
-the SDK documents for its wrappers can be used.
-
-<code><a href="#record">Record</a>&lt;string, unknown&gt;</code>
-
-
-#### Record
-
-Construct a type with a set of properties K of type T
-
-<code>{
- [P in K]: T;
- }</code>
 
 </docgen-api>

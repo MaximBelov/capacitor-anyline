@@ -14,7 +14,11 @@ export interface InitAnylineSDKOptions {
  * `viewPluginConfig` (or `viewPluginCompositeConfig`) and `options`. It is handed to the SDK as it is, so every field
  * the SDK documents for its wrappers can be used.
  */
-export type AnylineScanViewConfig = Record<string, unknown>;
+// An index type rather than Record<string, unknown>: docgen prints a Record's expansion with whitespace that differs
+// between macOS and Linux, so the README check in CI would fail on a README built on a Mac.
+export interface AnylineScanViewConfig {
+  [key: string]: unknown;
+}
 
 /** The options of `scan`. */
 export interface ScanOptions {
