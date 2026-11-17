@@ -10,8 +10,8 @@ SDK present its own full-screen scanner. The newer "Infinity" API of the Cordova
 
 | Platform | SDK                                                                                            |
 | -------- | ---------------------------------------------------------------------------------------------- |
-| Android  | `io.anyline:anylinesdk` 56.6.0, from `https://mobile-sdk-android.anyline.io/release/`          |
-| iOS      | `https://github.com/Anyline/anyline-ocr-spm-module.git` from 56.7.0 (product `AnylinePackage`) |
+| Android  | `io.anyline:anylinesdk` 56.7.0, from `https://mobile-sdk-android.anyline.io/release/`          |
+| iOS      | `https://github.com/Anyline/anyline-ocr-spm-module.git` from 56.6.0 (product `AnylinePackage`) |
 
 ## Why this plugin exists
 
