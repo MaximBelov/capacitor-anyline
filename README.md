@@ -11,7 +11,7 @@ SDK present its own full-screen scanner. The newer "Infinity" API of the Cordova
 | Platform | SDK                                                                                            |
 | -------- | ---------------------------------------------------------------------------------------------- |
 | Android  | `io.anyline:anylinesdk` 56.6.0, from `https://mobile-sdk-android.anyline.io/release/`          |
-| iOS      | `https://github.com/Anyline/anyline-ocr-spm-module.git` from 56.6.0 (product `AnylinePackage`) |
+| iOS      | `https://github.com/Anyline/anyline-ocr-spm-module.git` from 56.7.0 (product `AnylinePackage`) |
 
 ## Why this plugin exists
 
@@ -61,7 +61,7 @@ copy of the SDK.
   granted before a scan, as with `io-anyline-cordova`.
 
 - **iOS**: add `NSCameraUsageDescription` to the app's `Info.plist`. The SDK asks for the camera itself when the scanner
-  opens. With CocoaPods the plugin depends on the `Anyline` pod (`~> 56.6`).
+  opens. With CocoaPods the plugin depends on the `Anyline` pod (`~> 56.7`).
 
 ## Usage
 

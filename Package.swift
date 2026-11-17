@@ -31,7 +31,7 @@ var dependencies: [Package.Dependency] = []
 if !coreOnly {
     dependencies += [
         .package(url: "https://github.com/ionic-team/capacitor-swift-pm.git", from: "8.0.0"),
-        .package(url: "https://github.com/Anyline/anyline-ocr-spm-module.git", from: "56.6.0")
+        .package(url: "https://github.com/Anyline/anyline-ocr-spm-module.git", from: "56.7.0")
     ]
     products = [
         .library(
