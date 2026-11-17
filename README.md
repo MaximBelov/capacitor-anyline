@@ -61,7 +61,7 @@ copy of the SDK.
   granted before a scan, as with `io-anyline-cordova`.
 
 - **iOS**: add `NSCameraUsageDescription` to the app's `Info.plist`. The SDK asks for the camera itself when the scanner
-  opens. With CocoaPods the plugin depends on the `Anyline` pod (`~> 56.6`).
+  opens. With CocoaPods the plugin depends on the `Anyline` pod (`~> 56.7`).
 
 ## Usage
 
