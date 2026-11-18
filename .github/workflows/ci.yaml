@@ -130,7 +130,9 @@ jobs:
   # Only a push to main or a publish-only run on main gets here, and only when `ci` is green. dist/ is not committed: it is built here, from the source that passed.
   publish:
     needs: [plan, ci]
-    if: success() && needs.plan.outputs.publish == 'true'
+    # Not success(): it reads the whole chain of needs, so the tests a publish-only run skips would skip this job too. `ci` already
+    # holds every result that has to pass.
+    if: always() && needs.ci.result == 'success' && needs.plan.outputs.publish == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
