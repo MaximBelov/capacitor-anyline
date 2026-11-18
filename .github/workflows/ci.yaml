@@ -3,7 +3,9 @@ name: CI
 #
 #   a pull request  runs the tests its change needs, and ends in `ci`, the one job a ruleset on main can require;
 #   a push to main  does the same for everything, then publishes the version in package.json to npm as `latest`;
-#   a run by hand   (workflow_dispatch) tests everything and never publishes.
+#   a run by hand   (workflow_dispatch) tests everything and never publishes, unless `publish_only` is ticked: then, on main
+#                   only, it runs the parity check and publishes, skipping the unit, iOS and Android tests. That is the way out
+#                   when a release commit passed its tests but a hosted runner never picked a job up (GitHub's macOS queue).
 #
 # npm's trusted publishing is tied to this file name: the package's Settings > Trusted Publisher on npmjs.com names this
 # repository and this file (ci.yaml), with no environment. There is no npm token to expire. A push that keeps the version
@@ -14,6 +16,11 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      publish_only:
+        description: 'Publish the version on main without the unit, iOS and Android tests (parity still runs)'
+        type: boolean
+        default: false
 permissions:
   contents: read
 # A newer push to a pull request cancels the run before it. A push to main never cancels another: it may be the one that publishes.
@@ -35,14 +42,17 @@ jobs:
   # Everything that depends on what triggered the run is decided here, once:
   #   ios, android  which of the longer tests are needed: all of them for a push, and for a pull request the ones whose code,
   #                 tests or shared files (the TypeScript, the manifest, the workflow) it changes
-  #   publish       whether the run ends in a publish: a push to main, and nothing else. Trusted publishing is tied to this file's name and
-  #                 not to a branch, so a run by hand on any branch would publish the version it carries if this said yes
+  #   unit          whether the unit tests run: always, except for a publish-only run
+  #   publish       whether the run ends in a publish: a push to main, or a publish-only run by hand on main. Trusted publishing is tied
+  #                 to this file's name and not to a branch, so a run by hand on any other branch would publish the version it carries if
+  #                 this said yes: a publish-only run anywhere but main fails here instead
   plan:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
       ios: ${{ steps.plan.outputs.ios }}
       android: ${{ steps.plan.outputs.android }}
+      unit: ${{ steps.plan.outputs.unit }}
       publish: ${{ steps.plan.outputs.publish }}
     steps:
       - uses: actions/checkout@v7.0.1
@@ -52,8 +62,20 @@ jobs:
         env:
           EVENT: ${{ github.event_name }}
           BASE: ${{ github.event.pull_request.base.sha }}
+          PUBLISH_ONLY: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_only }}
+          REF: ${{ github.ref }}
         run: |
-          if [ "$EVENT" = "pull_request" ]; then
+          unit=true
+          if [ "$PUBLISH_ONLY" = "true" ]; then
+            if [ "$REF" != "refs/heads/main" ]; then
+              echo "A publish-only run publishes the version it carries, so it runs on main only, not on $REF"
+              exit 1
+            fi
+            ios=false
+            android=false
+            unit=false
+            publish=true
+          elif [ "$EVENT" = "pull_request" ]; then
             files=$(git diff --name-only "$BASE" HEAD)
             echo "$files"
             shared='src/|example-app/|package\.json$|package-lock\.json$|\.github/workflows/ci\.yaml$'
@@ -71,11 +93,13 @@ jobs:
           {
             echo "ios=$ios"
             echo "android=$android"
+            echo "unit=$unit"
             echo "publish=$publish"
           } >> "$GITHUB_OUTPUT"
           cat "$GITHUB_OUTPUT"
   unit:
-    needs: parity
+    needs: [parity, plan]
+    if: needs.plan.outputs.unit == 'true'
     uses: ./.github/workflows/test.yaml
   ios:
     needs: [parity, plan]
@@ -103,7 +127,7 @@ jobs:
               *) echo "a required job did not pass"; exit 1 ;;
             esac
           done
-  # Only a push to main gets here, and only when `ci` is green. dist/ is not committed: it is built here, from the source that passed.
+  # Only a push to main or a publish-only run on main gets here, and only when `ci` is green. dist/ is not committed: it is built here, from the source that passed.
   publish:
     needs: [plan, ci]
     if: success() && needs.plan.outputs.publish == 'true'
