@@ -1,6 +1,6 @@
 {
   "name": "capacitor-anyline",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "The Anyline scanner SDK for Capacitor: initialise it with a licence key and scan with an Anyline scan view config, on Android and iOS",
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.js",
